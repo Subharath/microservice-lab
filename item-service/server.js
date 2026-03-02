@@ -1,17 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
 
+// Config and middleware
+const config = require('./config');
+const { logger, requestLogger } = require('./middleware/logger');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const itemRoutes = require('./routes/itemRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors(config.cors));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 // Routes
 app.use('/api/items', itemRoutes);
@@ -20,7 +23,9 @@ app.use('/api/items', itemRoutes);
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
-    service: 'Item Service',
+    service: config.service.name,
+    version: config.service.version,
+    environment: config.server.env,
     timestamp: new Date().toISOString()
   });
 });
@@ -28,7 +33,8 @@ app.get('/health', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Welcome to Item Service API',
+    message: `Welcome to ${config.service.name} API`,
+    version: config.service.version,
     endpoints: {
       health: '/health',
       items: '/api/items'
@@ -37,20 +43,18 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+app.use(notFoundHandler);
 
 // Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Item Service running on port ${PORT}`);
-  console.log(`Health check available at http://localhost:${PORT}/health`);
+app.listen(config.server.port, () => {
+  logger.info(`${config.service.name} started`, {
+    port: config.server.port,
+    environment: config.server.env,
+    version: config.service.version
+  });
 });
 
 module.exports = app;
