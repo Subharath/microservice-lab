@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+*_test.go
+coverage.out
+
+# Documentation
+README.md
+docs
+
+# Development
+.env
+.env.local
+*.md
